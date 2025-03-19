@@ -57,7 +57,7 @@ export const useQuiz = () => {
       const calculatedResults = calculateResults(answers);
       setResults(calculatedResults);
       
-      // Send email with results
+      // Send email with results and store in Supabase
       const emailSent = await sendResultsEmail(userEmail, calculatedResults);
       
       if (emailSent) {

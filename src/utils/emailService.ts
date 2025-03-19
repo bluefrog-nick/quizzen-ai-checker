@@ -1,20 +1,38 @@
 
+import { supabase } from "@/integrations/supabase/client";
 import { Results } from './resultsCalculator';
 
 export const sendResultsEmail = async (email: string, results: Results): Promise<boolean> => {
   try {
-    // In a real application, this would send an API request to a backend service
-    // that would format and send the email with the assessment results
+    const userId = localStorage.getItem('ai-readiness-cookie') || 'anonymous';
     
-    console.log(`Email would be sent to: ${email}`);
-    console.log('Results:', results);
+    // 1. Store results in Supabase
+    const { error: dbError } = await supabase
+      .from('quiz_results')
+      .insert({
+        user_id: userId,
+        email,
+        results
+      });
     
-    // Simulating a successful email sending with a timeout
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    if (dbError) {
+      console.error('Error storing results in database:', dbError);
+      throw new Error(`Database error: ${dbError.message}`);
+    }
+    
+    // 2. Call Supabase Edge Function to send email
+    const { error: functionError } = await supabase.functions.invoke('send-results-email', {
+      body: { email, results },
+    });
+    
+    if (functionError) {
+      console.error('Error calling send-results-email function:', functionError);
+      throw new Error(`Function error: ${functionError.message}`);
+    }
     
     return true;
   } catch (error) {
-    console.error('Error sending email:', error);
+    console.error('Error in sendResultsEmail:', error);
     return false;
   }
 };
