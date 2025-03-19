@@ -1,18 +1,19 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Results } from './resultsCalculator';
+import { Json } from "@/integrations/supabase/types";
 
 export const sendResultsEmail = async (email: string, results: Results): Promise<boolean> => {
   try {
     const userId = localStorage.getItem('ai-readiness-cookie') || 'anonymous';
     
-    // 1. Store results in Supabase
+    // 1. Store results in Supabase - convert Results to Json type
     const { error: dbError } = await supabase
       .from('quiz_results')
       .insert({
         user_id: userId,
         email,
-        results
+        results: results as unknown as Json // Type casting to satisfy Supabase's Json type
       });
     
     if (dbError) {
